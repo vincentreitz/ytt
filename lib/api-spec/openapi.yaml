@@ -1,22 +1,30 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: YTTracker API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: channels
+    description: YouTube channel management
+  - name: videos
+    description: YouTube video management
+  - name: stats
+    description: Viewing statistics
+  - name: insights
+    description: Channel insights and recommendations
+  - name: playlist
+    description: Smart playlist generation
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +32,175 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /channels:
+    get:
+      operationId: listChannels
+      tags: [channels]
+      summary: List all subscribed channels
+      responses:
+        "200":
+          description: List of channels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Channel"
+    post:
+      operationId: createChannel
+      tags: [channels]
+      summary: Add a channel subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateChannelRequest"
+      responses:
+        "201":
+          description: Channel created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Channel"
+
+  /channels/{channelId}:
+    delete:
+      operationId: deleteChannel
+      tags: [channels]
+      summary: Remove a channel subscription
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Channel deleted
+
+  /videos:
+    get:
+      operationId: listVideos
+      tags: [videos]
+      summary: List videos, optionally filtered by channel
+      parameters:
+        - name: channelId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, watched, skipped]
+      responses:
+        "200":
+          description: List of videos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Video"
+    post:
+      operationId: createVideo
+      tags: [videos]
+      summary: Add a video
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVideoRequest"
+      responses:
+        "201":
+          description: Video created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+
+  /videos/{videoId}/status:
+    patch:
+      operationId: updateVideoStatus
+      tags: [videos]
+      summary: Update video status (watched, skipped, pending)
+      parameters:
+        - name: videoId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateVideoStatusRequest"
+      responses:
+        "200":
+          description: Updated video
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+
+  /stats/daily:
+    get:
+      operationId: getDailyStats
+      tags: [stats]
+      summary: Get daily viewing stats
+      parameters:
+        - name: days
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 30
+      responses:
+        "200":
+          description: Daily stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyStatsResponse"
+
+  /insights:
+    get:
+      operationId: getInsights
+      tags: [insights]
+      summary: Get channel insights and recommendations
+      responses:
+        "200":
+          description: Channel insights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsightsResponse"
+
+  /playlist/smart:
+    post:
+      operationId: generateSmartPlaylist
+      tags: [playlist]
+      summary: Generate a smart playlist for a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SmartPlaylistRequest"
+      responses:
+        "200":
+          description: Generated playlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SmartPlaylistResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +211,245 @@ components:
       required:
         - status
 
+    Channel:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        youtubeChannelId:
+          type: string
+        thumbnailUrl:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        videoCount:
+          type: integer
+        pendingCount:
+          type: integer
+      required:
+        - id
+        - name
+        - youtubeChannelId
+        - createdAt
+        - videoCount
+        - pendingCount
+
+    CreateChannelRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        youtubeChannelId:
+          type: string
+        thumbnailUrl:
+          type: string
+          nullable: true
+      required:
+        - name
+        - youtubeChannelId
+
+    Video:
+      type: object
+      properties:
+        id:
+          type: integer
+        channelId:
+          type: integer
+        channelName:
+          type: string
+        youtubeVideoId:
+          type: string
+        title:
+          type: string
+        thumbnailUrl:
+          type: string
+          nullable: true
+        durationSeconds:
+          type: integer
+        status:
+          type: string
+          enum: [pending, watched, skipped]
+        publishedAt:
+          type: string
+          format: date-time
+        watchedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - channelId
+        - channelName
+        - youtubeVideoId
+        - title
+        - durationSeconds
+        - status
+        - publishedAt
+        - createdAt
+
+    CreateVideoRequest:
+      type: object
+      properties:
+        channelId:
+          type: integer
+        youtubeVideoId:
+          type: string
+        title:
+          type: string
+        thumbnailUrl:
+          type: string
+          nullable: true
+        durationSeconds:
+          type: integer
+        publishedAt:
+          type: string
+          format: date-time
+      required:
+        - channelId
+        - youtubeVideoId
+        - title
+        - durationSeconds
+        - publishedAt
+
+    UpdateVideoStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, watched, skipped]
+      required:
+        - status
+
+    DailyStats:
+      type: object
+      properties:
+        date:
+          type: string
+        watchedSeconds:
+          type: integer
+        watchedCount:
+          type: integer
+        skippedCount:
+          type: integer
+      required:
+        - date
+        - watchedSeconds
+        - watchedCount
+        - skippedCount
+
+    DailyStatsResponse:
+      type: object
+      properties:
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyStats"
+        totalPendingSeconds:
+          type: integer
+        totalPendingCount:
+          type: integer
+        averageDailyWatchSeconds:
+          type: integer
+      required:
+        - days
+        - totalPendingSeconds
+        - totalPendingCount
+        - averageDailyWatchSeconds
+
+    ChannelInsight:
+      type: object
+      properties:
+        channelId:
+          type: integer
+        channelName:
+          type: string
+        thumbnailUrl:
+          type: string
+          nullable: true
+        totalVideos:
+          type: integer
+        watchedVideos:
+          type: integer
+        skippedVideos:
+          type: integer
+        pendingVideos:
+          type: integer
+        watchRatio:
+          type: number
+        avgDaysToWatch:
+          type: number
+          nullable: true
+        totalWatchedSeconds:
+          type: integer
+        recommendUnsubscribe:
+          type: boolean
+      required:
+        - channelId
+        - channelName
+        - totalVideos
+        - watchedVideos
+        - skippedVideos
+        - pendingVideos
+        - watchRatio
+        - totalWatchedSeconds
+        - recommendUnsubscribe
+
+    InsightsResponse:
+      type: object
+      properties:
+        channels:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChannelInsight"
+        topChannels:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChannelInsight"
+        unsubscribeRecommendations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChannelInsight"
+      required:
+        - channels
+        - topChannels
+        - unsubscribeRecommendations
+
+    SmartPlaylistRequest:
+      type: object
+      properties:
+        sessionMinutes:
+          type: integer
+          description: Available time in minutes for this session
+        prioritizeTopChannels:
+          type: boolean
+          default: true
+        channelIds:
+          type: array
+          items:
+            type: integer
+          description: Optional filter to specific channels
+      required:
+        - sessionMinutes
+
+    SmartPlaylistResponse:
+      type: object
+      properties:
+        videos:
+          type: array
+          items:
+            $ref: "#/components/schemas/Video"
+        totalDurationSeconds:
+          type: integer
+        sessionMinutes:
+          type: integer
+      required:
+        - videos
+        - totalDurationSeconds
+        - sessionMinutes

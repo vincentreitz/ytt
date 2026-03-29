@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "YTTracker"
+version = "1.0.0"
+id = "artifacts/yttracker"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19830
+
+[services.development]
+run = "pnpm --filter @workspace/yttracker run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/yttracker", "run", "build" ]
+publicDir = "artifacts/yttracker/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19830"
+BASE_PATH = "/"

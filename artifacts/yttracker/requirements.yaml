@@ -1,0 +1,19 @@
+packages:
+  "framer-motion": "For premium page transitions, micro-interactions, and dialog animations"
+  "recharts": "For the daily watch time statistics chart on the Stats page"
+  "date-fns": "For formatting dates cleanly in feeds and charts"
+  "clsx": "Utility for constructing className conditionally"
+  "tailwind-merge": "Utility for merging tailwind classes intelligently"
+
+images:
+  - path: "artifacts/yttracker/public/images/empty-feed.png"
+    description: "Abstract elegant dark aesthetic mesh gradient in deep black with subtle neon red glows, minimalistic and cinematic, perfect for a dark mode dashboard empty state background"
+    aspect_ratio: "16:9"
+  - path: "artifacts/yttracker/public/images/playlist-hero.png"
+    description: "Abstract geometric 3d shapes in dark space with glowing red light streaks, sleek and modern tech aesthetic, cinematic lighting"
+    aspect_ratio: "16:9"
+
+notes:
+  - Uses strictly provided React Query hooks from @workspace/api-client-react
+  - Assumes global TanStack Query Client is provided in App.tsx
+  - Implements YouTube-inspired dark professional theme

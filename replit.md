@@ -48,6 +48,16 @@ Every package extends `tsconfig.base.json` which sets `composite: true`. The roo
 - `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
 - `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
 
+## YTTracker App
+
+A YouTube subscription tracker with:
+- **Feed** (`/`) — video grid with thumbnail, title, channel, duration. Filter by channel and status (pending/watched/skipped). Watch button opens YouTube and marks video as watched. Manual mark-as-watched and skip buttons.
+- **Stats** (`/stats`) — daily watch time bar chart (last 30 days), total backlog time, avg daily watch time.
+- **Insights** (`/insights`) — per-channel analytics: watch ratio, avg delay, total time. Highlights channels to consider unsubscribing from.
+- **Smart Playlist** (`/playlist`) — input session duration in minutes, generates a curated playlist from pending videos prioritizing most-watched channels.
+
+Database tables: `channels`, `videos` (with `video_status` enum: pending/watched/skipped).
+
 ## Packages
 
 ### `artifacts/api-server` (`@workspace/api-server`)
