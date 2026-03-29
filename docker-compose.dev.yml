@@ -1,0 +1,88 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: ytt-db-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: yttracker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d yttracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: ytt-api-dev
+    working_dir: /workspace
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env.docker
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/yttracker
+      LOG_LEVEL: debug
+      PNPM_STORE_PATH: /pnpm/store
+      CI: "true"
+    command: >
+      sh -lc "corepack enable &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @workspace/db push &&
+      pnpm --filter @workspace/api-server dev"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:3000/api/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/workspace
+      - pnpm_store:/pnpm/store
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: ytt-frontend-dev
+    working_dir: /workspace
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: "5173"
+      BASE_PATH: /
+      API_PROXY_TARGET: http://api:3000
+      CHOKIDAR_USEPOLLING: "true"
+      PNPM_STORE_PATH: /pnpm/store
+      CI: "true"
+    command: >
+      sh -lc "pnpm --filter @workspace/yttracker dev"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./:/workspace
+      - pnpm_store:/pnpm/store
+
+volumes:
+  postgres_data:
+  pnpm_store:

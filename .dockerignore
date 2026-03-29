@@ -1,0 +1,54 @@
+# VCS
+.git
+.gitignore
+
+# Dependencies
+node_modules
+**/node_modules
+.pnpm-store
+
+# Build outputs
+dist
+build
+out
+tmp
+coverage
+**/dist
+**/build
+**/.turbo
+
+# TypeScript / tooling caches
+*.tsbuildinfo
+.cache
+**/.cache
+.nx
+.parcel-cache
+vite.config.ts.timestamp-*
+eslintcache
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# IDE / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Local env and secrets
+.env
+.env.*
+!.env.example
+
+# Replit / local-only
+.replit
+.replitignore
+.local
+
+# Keep Docker context small by excluding generated artifacts
+artifacts/**/dist
+artifacts/**/.replit-artifact

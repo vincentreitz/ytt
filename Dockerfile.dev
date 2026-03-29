@@ -1,0 +1,38 @@
+# syntax=docker/dockerfile:1.7
+
+FROM node:20-bookworm-slim
+
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+
+RUN corepack enable && corepack prepare pnpm@10.17.1 --activate
+
+WORKDIR /workspace
+
+# Copy workspace manifests first for better layer caching
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY artifacts/api-server/package.json artifacts/api-server/package.json
+COPY artifacts/mockup-sandbox/package.json artifacts/mockup-sandbox/package.json
+COPY artifacts/yttracker/package.json artifacts/yttracker/package.json
+COPY lib/api-client-react/package.json lib/api-client-react/package.json
+COPY lib/api-spec/package.json lib/api-spec/package.json
+COPY lib/api-zod/package.json lib/api-zod/package.json
+COPY lib/db/package.json lib/db/package.json
+COPY scripts/package.json scripts/package.json
+
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm install --frozen-lockfile
+
+# Copy the full monorepo after deps are installed
+COPY . .
+
+ENV NODE_ENV=development
+ENV HOST=0.0.0.0
+ENV PORT=3000
+ENV BASE_PATH=/
+ENV CHOKIDAR_USEPOLLING=true
+ENV WATCHPACK_POLLING=true
+
+EXPOSE 3000 5173
+
+# Default to frontend dev server; override in compose for other services
+CMD ["pnpm", "--filter", "@workspace/yttracker", "run", "dev"]

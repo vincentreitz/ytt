@@ -1,5 +1,13 @@
+import { config as loadDotenv } from "dotenv";
 import app from "./app";
 import { logger } from "./lib/logger";
+
+if (process.env.NODE_ENV !== "production") {
+  loadDotenv({ path: ".env" });
+  loadDotenv({ path: ".env.local" });
+  loadDotenv({ path: ".env.docker" });
+  loadDotenv({ path: ".env.docker.local" });
+}
 
 const rawPort = process.env["PORT"];
 
