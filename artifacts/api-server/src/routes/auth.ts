@@ -21,8 +21,6 @@ router.get("/auth/google", (_req, res) => {
     scope: SCOPES,
     prompt: "consent",
   });
-  const parsed = new URL(url);
-  logger.info({ redirectUri: parsed.searchParams.get("redirect_uri") }, "OAuth redirect URI used");
   res.redirect(url);
 });
 
