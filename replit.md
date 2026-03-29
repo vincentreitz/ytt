@@ -50,6 +50,11 @@ Every package extends `tsconfig.base.json` which sets `composite: true`. The roo
 
 ## YTTracker App
 
+A YouTube subscription tracker with Google OAuth sign-in and YouTube Data API v3 integration. No manual data entry — everything comes from the user's real YouTube account.
+
+**Auth flow:** Google OAuth2 → `/api/auth/google` → callback stores access token in DB → session cookie. Sign-in page shown when unauthenticated.
+**Sync:** POST `/api/sync` fetches subscriptions + uploads playlists + recent videos (skips Shorts < 60s) from YouTube API.
+
 A YouTube subscription tracker with:
 - **Feed** (`/`) — video grid with thumbnail, title, channel, duration. Filter by channel and status (pending/watched/skipped). Watch button opens YouTube and marks video as watched. Manual mark-as-watched and skip buttons.
 - **Stats** (`/stats`) — daily watch time bar chart (last 30 days), total backlog time, avg daily watch time.

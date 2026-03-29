@@ -1,13 +1,15 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { videosTable, channelsTable } from "@workspace/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
-router.get("/insights", async (_req, res) => {
+router.get("/insights", async (req, res) => {
+  if (!req.session.userId) { res.status(401).json({ error: "Not authenticated" }); return; }
   try {
+    const userId = req.session.userId;
     const rows = await db
       .select({
         channelId: channelsTable.id,
@@ -22,6 +24,7 @@ router.get("/insights", async (_req, res) => {
       })
       .from(channelsTable)
       .leftJoin(videosTable, eq(videosTable.channelId, channelsTable.id))
+      .where(eq(channelsTable.userId, userId))
       .groupBy(channelsTable.id)
       .orderBy(sql`count("videos"."id") filter (where "videos"."status" = 'watched') desc`);
 

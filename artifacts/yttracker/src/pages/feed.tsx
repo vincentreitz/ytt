@@ -109,10 +109,10 @@ export default function Feed() {
             </div>
             <h3 className="text-2xl font-display font-bold text-foreground mb-2">You're all caught up!</h3>
             <p className="text-muted-foreground mb-8">
-              There are no videos matching your current filters. Time to relax or add more channels.
+              Aucune vidéo ne correspond à ces filtres. Lance une sync pour importer tes abonnements YouTube.
             </p>
             <Button onClick={() => { setStatusFilter(undefined); setChannelFilter(undefined); }}>
-              View All Videos
+              Voir toutes les vidéos
             </Button>
           </div>
         </div>

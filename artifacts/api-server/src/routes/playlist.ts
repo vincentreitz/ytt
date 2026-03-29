@@ -1,14 +1,16 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { videosTable, channelsTable } from "@workspace/db/schema";
-import { eq, sql, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import { GenerateSmartPlaylistBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
 router.post("/playlist/smart", async (req, res) => {
+  if (!req.session.userId) { res.status(401).json({ error: "Not authenticated" }); return; }
   try {
     const body = GenerateSmartPlaylistBody.parse(req.body);
+    const userId = req.session.userId;
     const sessionSeconds = body.sessionMinutes * 60;
 
     const topChannelRows = await db
@@ -17,12 +19,17 @@ router.post("/playlist/smart", async (req, res) => {
         totalWatched: sql<number>`count(*) filter (where ${videosTable.status} = 'watched')::int`,
       })
       .from(videosTable)
+      .innerJoin(channelsTable, eq(videosTable.channelId, channelsTable.id))
+      .where(eq(channelsTable.userId, userId))
       .groupBy(videosTable.channelId)
       .orderBy(sql`count(*) filter (where ${videosTable.status} = 'watched') desc`);
 
     const topChannelIds = topChannelRows.map(r => r.channelId);
 
-    const conditions = [eq(videosTable.status, "pending")];
+    const conditions = [
+      eq(videosTable.status, "pending"),
+      eq(channelsTable.userId, userId),
+    ];
     if (body.channelIds && body.channelIds.length > 0) {
       conditions.push(inArray(videosTable.channelId, body.channelIds));
     }
@@ -49,11 +56,9 @@ router.post("/playlist/smart", async (req, res) => {
     let sorted = pendingVideos;
     if (body.prioritizeTopChannels !== false && topChannelIds.length > 0) {
       sorted = [...pendingVideos].sort((a, b) => {
-        const rankA = topChannelIds.indexOf(a.channelId);
-        const rankB = topChannelIds.indexOf(b.channelId);
-        const ra = rankA === -1 ? 9999 : rankA;
-        const rb = rankB === -1 ? 9999 : rankB;
-        return ra - rb;
+        const ra = topChannelIds.indexOf(a.channelId);
+        const rb = topChannelIds.indexOf(b.channelId);
+        return (ra === -1 ? 9999 : ra) - (rb === -1 ? 9999 : rb);
       });
     }
 
@@ -66,11 +71,7 @@ router.post("/playlist/smart", async (req, res) => {
       }
     }
 
-    res.json({
-      videos: playlist,
-      totalDurationSeconds: total,
-      sessionMinutes: body.sessionMinutes,
-    });
+    res.json({ videos: playlist, totalDurationSeconds: total, sessionMinutes: body.sessionMinutes });
   } catch (err) {
     res.status(500).json({ error: "Failed to generate smart playlist" });
   }
