@@ -71,13 +71,32 @@ router.get("/auth/google/callback", async (req, res) => {
     req.session.userId = user.id;
     req.session.save(() => {
       const domain = (process.env.REPLIT_DOMAINS ?? "").split(",")[0]?.trim();
-      const appUrl = domain ? `https://${domain}/` : "/";
-      res.redirect(appUrl);
+      const successUrl = domain ? `https://${domain}/api/auth/success` : "/api/auth/success";
+      res.redirect(successUrl);
     });
   } catch (err) {
     logger.error({ err }, "OAuth callback error");
     res.status(500).json({ error: "Authentication failed" });
   }
+});
+
+router.get("/auth/success", (_req, res) => {
+  res.send(`<!DOCTYPE html>
+<html>
+<head><title>Connecté</title></head>
+<body style="font-family:sans-serif;text-align:center;padding:40px;background:#0f0f0f;color:#fff;">
+  <p>✅ Connecté avec succès !</p>
+  <p style="font-size:13px;color:#aaa;">Cette fenêtre va se fermer automatiquement…</p>
+  <script>
+    if (window.opener) {
+      window.opener.postMessage("auth_complete", "*");
+      setTimeout(() => window.close(), 500);
+    } else {
+      window.location.href = "/";
+    }
+  </script>
+</body>
+</html>`);
 });
 
 router.get("/auth/me", async (req, res) => {
